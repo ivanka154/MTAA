@@ -223,6 +223,99 @@ exports.createTransferRequest = async function (requirerId, approverId, restaura
   return v;
 }
 
+exports.acceptTransferItem = async function(userId, restaurantId, tableId, orderId, requestId) {
+  var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId 
+  var pathRequest = "requests/transferItem/" + restaurantId + "/" + tableId + "/" + requestId
+
+  var request = await read(pathRequest);
+
+  if(request == null) {
+    return false;
+  }
+  
+  var path1 = pathOrder + "/suborders/" + request.aprover + "/items/" + request.item.id + "/delivered"
+  var path2 = pathOrder + "/suborders/" + request.requirer + "/items/" + request.item.id + "/transfered"
+  var countOfDelivered = await read(path1);
+  var countOfTransfered = await read(path2);
+
+  if(userId != request.aprover) {
+    return false;
+  }
+
+  var updates = {}
+
+  if (countOfDelivered == null) {
+    updates[path1] = request.item.amount 
+  }
+  else {
+    updates[path1] = countOfDelivered + request.item.amount 
+  }
+
+  if (countOfTransfered == null || countOfTransfered == request.item.amount) {
+    updates[path2] = null
+  }
+  else {
+    updates[path2] = countOfTransfered - request.item.amount
+  }
+
+  updates[pathRequest] = null
+  updates[pathOrder + "/transferRequests/" + requestId] = null;
+
+  var v = await update(updates);
+  if(v == true) {
+    var order = await read(pathOrder);
+    return order;
+  }
+  return v;
+}
+
+exports.rejectTransferItem = async function(userId, restaurantId, tableId, orderId, requestId) {
+  var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId 
+  var pathRequest = "requests/transferItem/" + restaurantId + "/" + tableId + "/" + requestId
+
+  var request = await read(pathRequest);
+
+  if(request == null) {
+    return false;
+  }
+  
+  var path1 = pathOrder + "/suborders/" + request.requirer + "/items/" + request.item.id + "/delivered"
+  var path2 = pathOrder + "/suborders/" + request.requirer + "/items/" + request.item.id + "/transfered"
+  var countOfDelivered = await read(path1);
+  var countOfTransfered = await read(path2);
+
+  if(userId != request.aprover) {
+    return false;
+  }
+
+  var updates = {}
+
+  if (countOfDelivered == null) {
+    updates[path1] = request.item.amount 
+  }
+  else {
+    updates[path1] = countOfDelivered + request.item.amount 
+  }
+
+  if (countOfTransfered == null || countOfTransfered == request.item.amount) {
+    updates[path2] = null
+  }
+  else {
+    updates[path2] = countOfTransfered - request.item.amount
+  }
+
+  updates[pathRequest] = null
+  updates[pathOrder + "/transferRequests/" + requestId] = null;
+
+  var v = await update(updates);
+  if(v == true) {
+    var order = await read(pathOrder);
+    return order;
+  }
+  return v;
+}
+
+
 function read (path) {
    return firebase.database().ref(path).once('value').then(function (snapshot) {
     var data = snapshot.val() || null; 

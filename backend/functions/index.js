@@ -163,7 +163,7 @@ app.post('/order/joinRequest', (req, res) => {
             }
             
         }, function(error){
-            res.status(500).json({ message : "Couldn't get yur request"})
+            res.status(500).json({ message : "Couldn't get your request"})
         })
     })
 
@@ -260,9 +260,9 @@ app.get('/restaurant/getMenu', (req, res) => {
             res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
         }
     }, function(error){
-        res.status(500).json({ message : "Couldn't get yur request"})
+        res.status(500).json({ message : "Couldn't get your request"})
     }).catch(function (error) {
-        res.status(500).json({ message : "Couldn't get yur request"})
+        res.status(500).json({ message : "Couldn't get your request"})
     })
 })
 
@@ -294,9 +294,9 @@ app.get('/restaurant/getFood', (req, res) => {
             })
         }
     }, function(error){
-        res.status(500).json({ message : "Couldn't get yur request"})
+        res.status(500).json({ message : "Couldn't get your request"})
     }).catch(function (error) {
-        res.status(500).json({ message : "Couldn't get yur request"})
+        res.status(500).json({ message : "Couldn't get your request"})
     })
 })
 
@@ -376,9 +376,9 @@ app.get('/order', (req, res) => {
                 res.status(400).json({ message : "Bad request, no order for input parameters" });
             }
         }, function(error){
-            res.status(500).json({ message : "Couldn't get yur request"})
+            res.status(500).json({ message : "Couldn't get your request"})
         }).catch(function (error) {
-            res.status(500).json({ message : "Couldn't get yur request"})
+            res.status(500).json({ message : "Couldn't get your request"})
         })
   
 
@@ -470,8 +470,63 @@ app.post('/order/transferRequest', (req, res) => {
     )
 })
 
-app.put('/odrer/acceptTransfer', (req, res) => {
-    
+app.put('/order/acceptTransfer', (req, res) => {
+    const { userId, restaurantId, tableId, orderId, requestId, aproved } = req.body;
+
+    if (userId == null || restaurantId == null || tableId == null || orderId == null || requestId == null || aproved == null) {
+        res.status(400).json({ 
+            message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId, requestId, aproved}" 
+        })
+    }
+
+    if(aproved == true){
+        func.acceptTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
+            function(value) {
+                if (value != false) {
+                    res.status(200).json({
+                        message : "Item succefully transfered.",
+                        order : value
+                    })
+                }
+                else {
+                    res.status(400).json({
+                        message : "Bad request."
+                    }) 
+                }
+            },
+            function(error) {
+                res.status(400).json({
+                    errorCode : error.code,
+                    message : error.message
+                })
+            }
+        )   
+    }
+    else{
+        func.rejectTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
+            function(value) {
+                if (value != false) {
+                    res.status(200).json({
+                        message : "Item transfer succefully rejected.",
+                        order : value
+                    })
+                }
+                else {
+                    res.status(400).json({
+                        message : "Bad request."
+                    }) 
+                }
+            },
+            function(error) {
+                res.status(400).json({
+                    errorCode : error.code,
+                    message : error.message
+                })
+            }
+        )   
+    }
+
+
 })
 
 app.post('/payment/', (req, res) => {

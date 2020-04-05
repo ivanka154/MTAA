@@ -63,7 +63,7 @@
       "function" : "app"
     },
     {
-      "source" : "/odrer/acceptTransfer",
+      "source" : "/order/acceptTransfer",
       "function" : "app"
     },
     {
