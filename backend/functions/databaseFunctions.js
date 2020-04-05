@@ -110,11 +110,14 @@ exports.addNewUserToOrder = async function (requirerId, orderId, requestId, rest
   return v;
 }
 
-exports.rejectJoinRequest = async function (restaurantId, tableId, requestId, orderId) {
+exports.rejectJoinRequest = async function (requirerId, restaurantId, tableId, requestId, orderId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
   var updates = {}
   updates[path + "/joinRequests/" + requestId] = null
+  updates[path + "/activeUsers/" + requirerId] = null
+
   updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
+
   var v = await update(updates);
   if(v == true) 
   {
@@ -141,11 +144,29 @@ exports.checkTableIfFree = async function(restaurantId, tableId) {
 exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableId, foods) {
   var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
   var updates = {}
+  var order = await read(pathOrder)
+  var isActive = await read("orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId)
+
+  if(order == null)
+    return -2
+  
+    
+  if( isActive != "active"){
+    console.log("------------" + isActive + "-----------")
+
+    return -3
+  }
 
   for(var i = 0; i < foods.length; i++) {
+    var food = await read("restaurants/" + restaurantId + "/foods/" + foods[i].id);
+    if(food == null)
+    {
+      console.log("restaurants/" + restaurantId + "/foods/" + foods[i].id)
+      return -1
+    }
     var pathItem = pathOrder + "/suborders/" + userId + "/items/" + foods[i].id
 
-    updates[pathItem + "/name"] = foods[i].name;
+    updates[pathItem + "/name"] = food.name;
 
     var ordered = await read(pathItem + "/ordered");
 
@@ -158,7 +179,7 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
   var v = await update(updates);
   if(v == true) 
   {
-    var order = await read(pathOrder)
+    order = await read(pathOrder)
     return order;
   }
   return v;

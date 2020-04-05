@@ -200,7 +200,7 @@ app.put('/order/addNewUser', (req, res) => {
                         );
                     }
                     else if (accepted == "false") {
-                        func.rejectJoinRequest(restaurantId, tableId, requestId, orderId).then(
+                        func.rejectJoinRequest(value.requirer, restaurantId, tableId, requestId, orderId).then(
                             function(value) {
                                 res.status(200).json({
                                     message : "Join request was rejected.",
@@ -318,16 +318,28 @@ app.put('/order/addNewItem', (req, res) => {
     }
 
     for(var i = 0; i < foods.length; i++) {
-        if(foods[i].name == null || foods[i].amount == null || foods[i].id == null) {
+        if( foods[i].amount == null || foods[i].id == null) {
             res.status(400).json({
                 message : "Bad request."
             })
         }
     }
-
+    
     func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods).then(
         function(value) {
             if (value != null) {
+                if(value == -1){
+                    res.status(400).json({ message : "Unexisting item wanted" })
+                    return
+                }
+                if(value == -2){
+                    res.status(400).json({ message : "No order exists for given parameters" })
+                    return
+                }
+                if(value == -3){
+                    res.status(400).json({ message : "User is not amongst active user in order" })
+                    return
+                }
                 res.status(200).json({
                     message : "Order was updated.",
                     order : value
