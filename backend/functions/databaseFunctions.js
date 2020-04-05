@@ -58,6 +58,17 @@ exports.getNumberOfFoodsInRestaurant = async function (restaurantId) {
   return numberOfFoods
 }
 
+exports.getOrder = async function (restaurantId, tableId, orderId) {
+  var order = await read("orders/" + restaurantId + "/" + tableId + "/orders/" + orderId);
+  return order
+}
+
+exports.getActiveUsersOnOrder = async function(restaurantId, tableId, orderId, userId){
+  var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId;
+  var isActive = await read(path);
+  return isActive
+}
+
 exports.createJoinTableRequest = async function (restaurantId, tableId, userId, orderId) {
   var requestId = getPushKey("requests/joinTable/" + restaurantId + "/" + tableId )
   var ownerId = await read ("orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/owner");
@@ -71,6 +82,8 @@ exports.createJoinTableRequest = async function (restaurantId, tableId, userId, 
   var updates = {}
   updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = request;
   updates["orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/joinRequests/" + requestId ] = true;
+  updates["orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId ] = "requested";
+
   var v = await update(updates);
   if(v == true) 
   {
@@ -118,6 +131,7 @@ exports.readTest = async function () {
 function read (path) {
    return firebase.database().ref(path).once('value').then(function (snapshot) {
     var data = snapshot.val() || null; 
+    console.log(snapshot.val())
     return data;
   }, function (error){
     console.log("Couldnt read data on path :" + path);
@@ -131,6 +145,7 @@ function readNumberOfChildren (path) {
    return data;
  }, function (error){
    console.log("Couldnt read data on path :" + path);
+   console.log();
    return null;
  });
 }
