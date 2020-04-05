@@ -134,33 +134,39 @@ app.post('/order/joinRequest', (req, res) => {
         res.status(400).json({ message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId}" })
         return;
     }
-
-    func.getActiveUsersOnOrder(restaurantId, tableId, orderId, userId).then(function (value){
-        if(value != null)
-        {
-            res.status(400).json({ message : "User is allready in order" });
-            return 
+    func.getOrder(restaurantId, tableId, orderId).then(function (value){
+        if (value == null){
+            res.status(400).json({ message : "No order with given path found" });
+            return;
         }
-        else
-        {
-          func.createJoinTableRequest(restaurantId, tableId, userId, orderId).then(
-            function(value) {
-                res.status(200).json({
-                    message : "New request for join table was created.",
-                    request : value
-                })
-            },
-            function(error) {
-                res.status(400).json({
-                    errorCode : error.code,
-                    message : error.message
-                })
-            })  
-        }
-        
-    }, function(error){
-        res.status(500).json({ message : "Couldn't get yur request"})
+        func.getActiveUsersOnOrder(restaurantId, tableId, orderId, userId).then(function (value){
+            if(value != null)
+            {
+                res.status(400).json({ message : "User is allready in order" });
+                return 
+            }
+            else
+            {
+              func.createJoinTableRequest(restaurantId, tableId, userId, orderId).then(
+                function(value) {
+                    res.status(200).json({
+                        message : "New request for join table was created.",
+                        request : value
+                    })
+                },
+                function(error) {
+                    res.status(400).json({
+                        errorCode : error.code,
+                        message : error.message
+                    })
+                })  
+            }
+            
+        }, function(error){
+            res.status(500).json({ message : "Couldn't get yur request"})
+        })
     })
+
 })
 
 app.put('/order/addNewUser', (req, res) => {

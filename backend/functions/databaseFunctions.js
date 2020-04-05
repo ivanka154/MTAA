@@ -67,6 +67,8 @@ exports.getActiveUsersOnOrder = async function(restaurantId, tableId, orderId, u
   var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId;
   var isActive = await read(path);
   return isActive
+  console.log(isActive)
+
 }
 
 exports.createJoinTableRequest = async function (restaurantId, tableId, userId, orderId) {
