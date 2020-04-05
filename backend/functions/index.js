@@ -23,7 +23,10 @@ app.get('/helloWorld', (request, response) => {
 
 app.post('/user/register', (req, res) => {
     const { name, password, email } = req.body
-     
+    if( name == null || password == null || emaill == null)
+    {
+        res.status(400).json({ message : "One of required parameters is missing : {name, password, email}" });
+    }
     auth.fetchSignInMethodsForEmail(email).then(
         function(value) {        
             if (value.length > 0) 
@@ -55,21 +58,35 @@ app.post('/user/register', (req, res) => {
                     )
                 });
             }
+    }).catch(function (error) {
+        res.status(400).json({ 
+            message : error.message,
+            errorCode : error.code
+        })
     });
 });
 
 app.post('/user/login', (req, res) => {
     const { password, email } = req.body
-    
+    if( password == null || email == null)
+    {
+        res.status(400).json({ message : "One of required parameters is missing : {password, email}" });
+    }
+    console.log(password + " " + email)
     auth.signInWithEmailAndPassword(email, password).then(
         function(value) {
-            response.status(200).json({
+            res.status(200).json({
                 message : "User " + email + " succesfully signed in",
                 userId : value.user.uid
             })
         }, 
         function(error){
-            response.status(400).json({
+            res.status(400).json({
+                errorCode : error.code,
+                message : error.message
+            })
+        }).catch(function (error) {
+            res.status(400).json({
                 errorCode : error.code,
                 message : error.message
             })
@@ -78,9 +95,11 @@ app.post('/user/login', (req, res) => {
 
 app.post('/order/createNew', (req, res) => {
     const { userId, restaurantId, tableId } = req.body;
-    var isTableEmpty
+    if ( restaurantId == null || tableId == null || userId == null ){
+        res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, userId}" });
+    }
     func.checkTableIfFree(restaurantId, tableId).then(function (value) {
-        isTableEmpty = value
+        var isTableEmpty = value
         console.log(isTableEmpty)
         if (isTableEmpty == true)
         {
