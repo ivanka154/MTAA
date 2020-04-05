@@ -19,6 +19,10 @@
       "function" : "app"
     },
     {
+      "source" : "/order/joinRequest",
+      "function" : "app"
+    },
+    {
       "source" : "/order/addNewUser",
       "function" : "app"
     },

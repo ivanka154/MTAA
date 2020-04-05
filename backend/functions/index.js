@@ -28,22 +28,31 @@ app.post('/user/register', (req, res) => {
         function(value) {        
             if (value.length > 0) 
             {
-                response.status(400).json({ message : "Unable to register, email is allready in use" })
+                res.status(400).json({ message : "Unable to register, email is allready in use" })
             }
             else 
             {
                 auth.createUserWithEmailAndPassword(email, password).catch(function(error) {    
-                    response.status(400).json({ 
+                    res.status(400).json({ 
                         message : error.message,
                         errorCode : error.code
                     })
                 }).then(function(value) {
-                    
-                    func.someFunction(name, email, "customer", value.user.uid)
-                    response.status(201).json({
-                        message : "User was succesfully created",
-                        userId : value.user.uid,
-                    })
+
+                    func.createNewUser(value.user.uid, email, name, "customer").then(
+                        function(newUser) {
+                            res.status(201).json({
+                                message : "User was succesfully created",
+                                userId : newUser.id
+                            })
+                        },
+                        function(error) {
+                            res.status(400).json({ 
+                                message : error.message,
+                                errorCode : error.code
+                            })
+                        }
+                    )
                 });
             }
     });
@@ -68,14 +77,14 @@ app.post('/user/login', (req, res) => {
 });
 
 app.post('/order/createNew', (req, res) => {
-    const { userId, restaurandId, tableId } = req.body;
+    const { userId, restaurantId, tableId } = req.body;
     var isTableEmpty
-    func.checkTableIfFree(restaurandId, tableId).then(function (value) {
+    func.checkTableIfFree(restaurantId, tableId).then(function (value) {
         isTableEmpty = value
         console.log(isTableEmpty)
         if (isTableEmpty == true)
         {
-            var v = func.createNewOrder(restaurandId, tableId, userId).then(function (value){
+            var v = func.createNewOrder(restaurantId, tableId, userId).then(function (value){
                 console.log(value)
                 res.status(201).json({ 
                     message : "New order was created",
@@ -100,12 +109,49 @@ app.post('/order/createNew', (req, res) => {
  })
 
 app.post('/order/joinRequest', (req, res) => {
-    const { userId, restaurandId, tableId, orderId } = req.body;
-    func.createJoinTableRequest(restaurandId, tableId, userId, orderId);
+    const { userId, restaurantId, tableId, orderId } = req.body;
+
+    func.createJoinTableRequest(restaurantId, tableId, userId, orderId).then(
+        function(value) {
+            res.status(200).json({
+                message : "New request for join table was created.",
+                request : value
+            })
+        },
+        function(error) {
+            res.status(400).json({
+                errorCode : error.code,
+                message : error.message
+            })
+        }
+    )
 })
 
 app.put('/order/addNewUser', (req, res) => {
+    const { userId, orderId, requestId, restaurantId, tableId } = req.body;
+    console.log(userId + " " + restaurantId + " " + tableId + " " + orderId)
 
+
+    var joinRequest = func.getJoinRequest(restaurantId, tableId, requestId);
+    if (joinRequest.aprover == userId)
+    {
+        func.addNewUserToOrder(joinRequest.requirer, orderId, requestId, restaurantId, tableId).then(
+            function(value) {
+                res.status(200).json({
+                    message : "New user was added to order.",
+                    order : value
+                })
+            },
+            function(error) {
+                res.status(400).json({
+                    errorCode : error.code,
+                    message : error.message
+                })
+            }
+        );
+    }
+
+    
 })
 
 app.get('/restaurant/getMenu', (req, res) => {

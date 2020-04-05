@@ -1,15 +1,22 @@
 const firebase = require('firebase');
 
-exports.createNewUser = function (userId, name, email, imageUrl) {
-    firebase.database().ref('users/' + userId).set({
-      username: name,
-      email: email,
-      profile_picture : imageUrl
-  }).then (function (value) {
-      return true
-  },function (error){
-    return false
-  })
+exports.createNewUser = async function (userId, email, name, role) {
+  var newUser = {
+    id : userId,
+    email : email,
+    name : name,
+    role : role
+  }
+  console.log("2")
+  var updates = {}
+  updates["users/" + userId] = newUser;
+  
+  var v = await update(updates);
+  
+  if (v == true) {
+    return newUser;
+  }
+  return v;
 }; 
 
 exports.createNewOrder = async function ( restaurantId, tableId, userId ) {
@@ -33,7 +40,6 @@ exports.createNewOrder = async function ( restaurantId, tableId, userId ) {
   {
     return order;
   }
-
   return v;
 }
 
@@ -69,6 +75,22 @@ exports.createJoinTableRequest = async function (restaurantId, tableId, userId, 
   if(v == true) 
   {
     return request;
+  }
+  return v;
+}
+
+exports.addNewUserToOrder = async function (userId, orderId, requestId, restaurantId, tableId) {
+  var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
+  var updates = {}
+  updates[path + "/activeUsers/" + userId] = "active"
+  updates[path + "/suborders/" + userId + "/status"] = "open"
+  updates[path + "/joinRequests/" + requestId] = null
+  updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
+  var v = await update(updates);
+  if(v == true) 
+  {
+    var order = await read(path)
+    return order;
   }
   return v;
 }
@@ -115,7 +137,6 @@ function readNumberOfChildren (path) {
 
 function update (updates) {
   return firebase.database().ref().update(updates, function(a) {
-    console.log(updates)
   }).catch(function(error){
     console.log("error");
     return false;
