@@ -7,11 +7,63 @@
       "function" : "app"
     },
     {
+      "source" : "/user/register",
+      "function" : "app"
+    },
+    {
       "source" : "/user/login",
       "function" : "app"
     },
     {
-      "source" : "/user/register",
+      "source" : "/order/createNew",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/addNewUser",
+      "function" : "app"
+    },
+    {
+      "source" : "/restaurant/getMenu",
+      "function" : "app"
+    },
+    {
+      "source" : "/restaurant/getFood",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/addNewIdem",
+      "function" : "app"
+    },
+    {
+      "source" : "/order",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/allItems",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/allItemsByUser",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/getAllUsers",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/itemToSend",
+      "function" : "app"
+    },
+    {
+      "source" : "/order/transferRequest",
+      "function" : "app"
+    },
+    {
+      "source" : "/odrer/acceptTransfer",
+      "function" : "app"
+    },
+    {
+      "source" : "/payment",
       "function" : "app"
     }],
     "ignore": [
