@@ -400,9 +400,9 @@ app.post('/order/transferRequest', (req, res) => {
         })
     }
 
-    if (item.amount == 0) {
+    if (item.amount <= 0) {
         res.status(400).json({ 
-            message : "Amount of item can not be 0." 
+            message : "Amount of item must be more then 0." 
         })
         return
     }
