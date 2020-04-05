@@ -530,7 +530,14 @@ app.put('/order/acceptTransfer', (req, res) => {
 })
 
 app.post('/payment/', (req, res) => {
-    
+    const { sum, orderId, userId, tableId, restaurantId } = req.body
+
+    if (sum == null || orderId == null || userId == null || restaurantId == null || tableId == null ) {
+        res.status(400).json({ 
+            message : "One of required parameters is missing : {sum, orderId, userId, tableId, restaurantId}" 
+        })
+    }
+
 })
 
 exports.app = functions.https.onRequest(app);
