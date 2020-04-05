@@ -63,12 +63,10 @@ exports.getOrder = async function (restaurantId, tableId, orderId) {
   return order
 }
 
-exports.getActiveUsersOnOrder = async function(restaurantId, tableId, orderId, userId){
+exports.getActiveStatusOfUser = async function(restaurantId, tableId, orderId, userId){
   var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId;
   var isActive = await read(path);
   return isActive
-  console.log(isActive)
-
 }
 
 exports.createJoinTableRequest = async function (restaurantId, tableId, userId, orderId) {
@@ -152,8 +150,6 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
   
     
   if( isActive != "active"){
-    console.log("------------" + isActive + "-----------")
-
     return -3
   }
 
@@ -181,6 +177,48 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
   {
     order = await read(pathOrder)
     return order;
+  }
+  return v;
+}
+
+exports.createTransferRequest = async function (requirerId, approverId, restaurantId, tableId, orderId, item) {
+  var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId 
+  var pathItem = pathOrder + "/suborders/" + requirerId + "/items/" + item.id
+
+  var countOfDelivered = await read(pathItem + "/delivered")
+  var countOfTransfered = await read(pathItem + "/transfered")
+
+  if (countOfDelivered == null || countOfDelivered < item.amount) {
+    return false;
+  }
+
+  var requestId = getPushKey("requests/transferItem/" + restaurantId + "/" + tableId)
+  
+  var request = {
+    id : requestId,
+    type : "transferItem",
+    requirer : requirerId,
+    aprover : approverId,
+    order : orderId,
+    item : item
+  }
+
+  var updates = {}
+  updates["requests/transferItem/" + restaurantId + "/" + tableId + "/" + requestId] = request;
+  updates["orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/transferRequests/" + requestId ] = true;
+  updates[pathItem + "/delivered"] = countOfDelivered - item.amount
+
+  if (countOfTransfered == null) {
+    updates[pathItem + "/transfered"] = item.amount
+  }
+  else {
+    updates[pathItem + "/transfered"] = countOfTransfered + item.amount
+  }
+
+  var v = await update(updates);
+  if(v == true) 
+  {
+    return request;
   }
   return v;
 }

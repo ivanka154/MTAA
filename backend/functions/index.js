@@ -139,7 +139,7 @@ app.post('/order/joinRequest', (req, res) => {
             res.status(400).json({ message : "No order with given path found" });
             return;
         }
-        func.getActiveUsersOnOrder(restaurantId, tableId, orderId, userId).then(function (value){
+        func.getActiveStatusOfUser(restaurantId, tableId, orderId, userId).then(function (value){
             if(value != null)
             {
                 res.status(400).json({ message : "User is allready in order" });
@@ -385,24 +385,89 @@ app.get('/order', (req, res) => {
     
 })
 
-/*app.get('/order/allItems', (req, res) => {
-    
-})
-
-app.get('/order/allItemsByUser', (req, res) => {
-    
-})
-
-app.get('/order/getAllUsers', (req, res) => {
-    
-})
-
-app.get('/order/itemToSend', (req, res) => {
-    
-})*/
-
 app.post('/order/transferRequest', (req, res) => {
-    
+    const { requirerId, approverId, restaurantId, tableId, orderId, item } = req.body;
+
+    if (requirerId == null || approverId == null || restaurantId == null || tableId == null || orderId == null || item == null) {
+        res.status(400).json({ 
+            message : "One of required parameters is missing : {requirerId, approverId, restaurantId, tableId, orderId, item}" 
+        })
+    }
+
+    if (item.id == null || item.amount == null) {
+        res.status(400).json({ 
+            message : "One of required parameters in field 'item' is missing : {id, amount}" 
+        })
+    }
+
+    if (item.amount == 0) {
+        res.status(400).json({ 
+            message : "Amount of item can not be 0." 
+        })
+        return
+    }
+
+    func.getActiveStatusOfUser(restaurantId, tableId, orderId, requirerId).then(
+        function(requirerStatus) {
+            
+            if (requirerStatus == "active") {
+                func.getActiveStatusOfUser(restaurantId, tableId, orderId, approverId).then(
+                    function(approverStatus) {
+                        
+                        if (approverStatus == "active") {
+                            func.createTransferRequest(requirerId, approverId, restaurantId, tableId, orderId, item).then(
+                                function (request) {
+                                    if(request != null) {
+                                        if (request == false) {
+                                            res.status(400).json({
+                                                message : "User does not have enough items to transfer."
+                                            })
+                                        }            
+                                        res.status(200).json({
+                                            message : "New request for transfer item was created.",
+                                            request : request
+                                        })
+                                    }
+                                    else {
+                                        res.status(500).json({
+                                            message : "Can not process your request."
+                                        })
+                                    }
+                                },
+                                function(error) {
+                                    res.status(500).json({
+                                         message : "Can not process your request."
+                                    })
+                                }
+                            )
+                        }
+                        else {
+                            res.status(400).json({ 
+                                message : "Bad request." 
+                            })
+                        }
+                    },
+                    function(error) {
+                        res.status(400).json({ 
+                            code: error.code,
+                            message : error.message
+                        })
+                    }
+                )
+            }
+            else {
+                res.status(400).json({ 
+                    message : "Bad request." 
+                })
+            }
+        },
+        function(error) {
+            res.status(400).json({ 
+                code: error.code,
+                message : error.message
+            })
+        }
+    )
 })
 
 app.put('/odrer/acceptTransfer', (req, res) => {
@@ -414,4 +479,3 @@ app.post('/payment/', (req, res) => {
 })
 
 exports.app = functions.https.onRequest(app);
-
