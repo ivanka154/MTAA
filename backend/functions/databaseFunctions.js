@@ -37,6 +37,21 @@ exports.createNewOrder = async function ( restaurantId, tableId, userId ) {
   return v;
 }
 
+exports.getMenu = async function(restaurantId) {
+  var menu = await read("restaurants/" + restaurantId);
+  return menu
+}
+
+exports.getFood = async function(restaurantId, foodId) {
+  var food = await read("restaurants/" + restaurantId + "/foods/" + foodId);
+  return food
+}
+
+exports.getNumberOfFoodsInRestaurant = async function (restaurantId) {
+  var numberOfFoods = await readNumberOfChildren("restaurants/" + restaurantId + "/foods");
+  return numberOfFoods
+}
+
 exports.createJoinTableRequest = async function (restaurantId, tableId, userId, orderId) {
   var requestId = getPushKey("requests/joinTable/" + restaurantId + "/" + tableId )
   var ownerId = await read ("orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/owner");
@@ -86,6 +101,16 @@ function read (path) {
     console.log("Couldnt read data on path :" + path);
     return null;
   });
+}
+
+function readNumberOfChildren (path) {
+  return firebase.database().ref(path).once('value').then(function (snapshot) {
+   var data = snapshot.numChildren() || null; 
+   return data;
+ }, function (error){
+   console.log("Couldnt read data on path :" + path);
+   return null;
+ });
 }
 
 function update (updates) {

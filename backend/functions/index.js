@@ -109,11 +109,58 @@ app.put('/order/addNewUser', (req, res) => {
 })
 
 app.get('/restaurant/getMenu', (req, res) => {
-    
+    const { restaurandId } = req.body;
+    if ( restaurandId == null || restaurandId.length <= 1 ){
+        res.status(400).json({ message : "Missing restaurantId" });
+    }
+    func.getMenu(restaurandId).then(function (value){
+        if (value != null )
+        {
+            res.status(200).json({ menu : value.foods });
+        }
+        else
+        {
+            res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
+        }
+    }, function(error){
+        res.status(500).json({ message : "Couldn't get yur request"})
+    }).catch(function (error) {
+        res.status(500).json({ message : "Couldn't get yur request"})
+    })
 })
 
 app.get('/restaurant/getFood', (req, res) => {
-    
+        const { restaurantId, foodId } = req.body;
+    if ( restaurantId == null || restaurantId.length <= 0 || foodId == null || foodId.length <= 0 ){
+        res.status(400).json({ message : "Missing restaurantId" });
+        return
+    }
+
+    console.log(restaurantId + " " + foodId)
+    func.getFood(restaurantId, foodId).then(function (value){
+        if (value != null )
+        {
+
+            res.status(200).json( value );
+        }
+        else
+        {
+            func.getNumberOfFoodsInRestaurant(restaurantId).then(function (value) {
+                if (value == null)
+                {
+                    res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
+                }
+                else
+                {
+                    res.status(400).json({ message : "Bad food Id, restaurant has " + value + " items on menu" });
+                }
+            })
+        }
+    }, function(error){
+        res.status(500).json({ message : "Couldn't get yur request"})
+    }).catch(function (error) {
+        res.status(500).json({ message : "Couldn't get yur request"})
+    })
 })
 
 app.put('/order/addNewIdem', (req, res) => {
