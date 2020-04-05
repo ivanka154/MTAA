@@ -92,11 +92,11 @@ exports.createJoinTableRequest = async function (restaurantId, tableId, userId, 
   return v;
 }
 
-exports.addNewUserToOrder = async function (userId, orderId, requestId, restaurantId, tableId) {
+exports.addNewUserToOrder = async function (requirerId, orderId, requestId, restaurantId, tableId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
   var updates = {}
-  updates[path + "/activeUsers/" + userId] = "active"
-  updates[path + "/suborders/" + userId + "/status"] = "open"
+  updates[path + "/activeUsers/" + requirerId] = "active"
+  updates[path + "/suborders/" + requirerId + "/status"] = "open"
   updates[path + "/joinRequests/" + requestId] = null
   updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
   var v = await update(updates);
@@ -108,6 +108,25 @@ exports.addNewUserToOrder = async function (userId, orderId, requestId, restaura
   return v;
 }
 
+exports.rejectJoinRequest = async function (restaurantId, tableId, requestId, orderId) {
+  var path = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
+  var updates = {}
+  updates[path + "/joinRequests/" + requestId] = null
+  updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
+  var v = await update(updates);
+  if(v == true) 
+  {
+    var order = await read(path)
+    return order;
+  }
+  return v;
+}
+
+exports.getJoinRequest =  async function(restaurantId, tableId, requestId) {
+  var request = await read("requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId);
+  return request
+}
+
 exports.checkTableIfFree = async function(restaurantId, tableId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/activeOrder";
   var active = await read(path);
@@ -115,17 +134,6 @@ exports.checkTableIfFree = async function(restaurantId, tableId) {
     return true
   else
     return active
-}
-
-exports.readTest = async function () {
-  var json = await read("users/Niko")
-  console.log(json)
-
-  if(json == null)
-    console.log("null")
-  else
-    console.log(json)
-    console.log(json.email, json.profile_picture)
 }
 
 function read (path) {

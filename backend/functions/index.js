@@ -145,30 +145,79 @@ app.post('/order/joinRequest', (req, res) => {
 })
 
 app.put('/order/addNewUser', (req, res) => {
-    const { userId, orderId, requestId, restaurantId, tableId } = req.body;
-    console.log(userId + " " + restaurantId + " " + tableId + " " + orderId)
+    const { userId, orderId, requestId, restaurantId, tableId, accepted } = req.body;
 
-
-    var joinRequest = func.getJoinRequest(restaurantId, tableId, requestId);
-    if (joinRequest.aprover == userId)
+    if (userId == null || orderId == null || requestId == null || restaurantId == null || tableId == null || accepted == null)
     {
-        func.addNewUserToOrder(joinRequest.requirer, orderId, requestId, restaurantId, tableId).then(
-            function(value) {
-                res.status(200).json({
-                    message : "New user was added to order.",
-                    order : value
-                })
-            },
-            function(error) {
-                res.status(400).json({
-                    errorCode : error.code,
-                    message : error.message
-                })
-            }
-        );
+        res.status(400).json({
+            message : "One or more of these fields - userId, orderId, requestId, restaurantId, tableId, accepted - are missing."
+        })
     }
 
-    
+    func.getJoinRequest(restaurantId, tableId, requestId).then(
+        function(value) {
+            if  (value != null){
+                if (value.aprover == userId) {
+                    if (accepted == "true") {
+                        func.addNewUserToOrder(value.requirer, orderId, requestId, restaurantId, tableId).then(
+                            function(value) {
+                                res.status(200).json({
+                                    message : "New user was added to order.",
+                                    order : value
+                                })
+                            },
+                            function(error) {
+                                res.status(400).json({
+                                    errorCode : error.code,
+                                    message : error.message
+                                })
+                            }
+                        );
+                    }
+                    else if (accepted == "false") {
+                        func.rejectJoinRequest(restaurantId, tableId, requestId, orderId).then(
+                            function(value) {
+                                res.status(200).json({
+                                    message : "Join request was rejected.",
+                                    order : value
+                                })
+                            },
+                            function(error) {
+                                res.status(400).json({
+                                    errorCode : error.code,
+                                    message : error.message
+                                })
+                            }
+                        )
+                    }
+                    else {
+                        console.log("aaa")
+                        res.status(400).json({
+                            message : "Bad request."
+                        })
+                    }
+                }
+                else {
+                    res.status(400).json({
+                        message : "User is not an approver of request."
+                    })
+                }
+            }
+            else {
+                console.log("bbb")
+
+                res.status(400).json({
+                    message : "Bad request."
+                })
+            }
+        },
+        function(error) {
+            res.status(400).json({
+                errorCode : error.code,
+                message : "Request does not exist."
+            })
+        }
+    )   
 })
 
 app.get('/restaurant/getMenu', (req, res) => {
