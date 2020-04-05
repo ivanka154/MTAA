@@ -275,8 +275,52 @@ app.get('/restaurant/getFood', (req, res) => {
     })
 })
 
-app.put('/order/addNewIdem', (req, res) => {
-    
+app.put('/order/addNewItem', (req, res) => {
+    const { restaurantId, userId, orderId, tableId, foods } = req.body;
+
+    if (userId == null || orderId == null || restaurantId == null || tableId == null || foods == null)
+    {
+        res.status(400).json({
+            message : "One or more of these fields - userId, orderId, restaurantId, tableId, foods - are missing."
+        })
+    }
+
+    if(foods.length == 0)
+    {
+        res.status(400).json({
+            message : "Field foods can not be empty."
+        })
+    }
+
+    for(var i = 0; i < foods.length; i++) {
+        if(foods[i].name == null || foods[i].amount == null || foods[i].id == null) {
+            res.status(400).json({
+                message : "Bad request."
+            })
+        }
+    }
+
+    func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods).then(
+        function(value) {
+            if (value != null) {
+                res.status(200).json({
+                    message : "Order was updated.",
+                    order : value
+                })
+            }
+            else {
+                res.status(500).json({
+                    message : "Can not process your request."
+                })
+            }
+        },
+        function(error) {
+            res.status(400).json({
+                code : error.code,
+                message : error.message
+            })
+        }
+    )
 })
 
 app.get('/order', (req, res) => {

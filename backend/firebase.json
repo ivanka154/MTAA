@@ -35,7 +35,7 @@
       "function" : "app"
     },
     {
-      "source" : "/order/addNewIdem",
+      "source" : "/order/addNewItem",
       "function" : "app"
     },
     {

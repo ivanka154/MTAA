@@ -136,6 +136,32 @@ exports.checkTableIfFree = async function(restaurantId, tableId) {
     return active
 }
 
+exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableId, foods) {
+  var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
+  var updates = {}
+
+  for(var i = 0; i < foods.length; i++) {
+    var pathItem = pathOrder + "/suborders/" + userId + "/items/" + foods[i].id
+
+    updates[pathItem + "/name"] = foods[i].name;
+
+    var ordered = await read(pathItem + "/ordered");
+
+    if(ordered == null)
+      updates[pathItem + "/ordered"] = foods[i].amount;
+    else
+      updates[pathItem + "/ordered"] = foods[i].amount + ordered;
+  }
+
+  var v = await update(updates);
+  if(v == true) 
+  {
+    var order = await read(pathOrder)
+    return order;
+  }
+  return v;
+}
+
 function read (path) {
    return firebase.database().ref(path).once('value').then(function (snapshot) {
     var data = snapshot.val() || null; 
