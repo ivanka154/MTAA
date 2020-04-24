@@ -19,28 +19,26 @@ var auth = firebase.auth();
 app.get('/helloWorld', (request, response) => {
     writeUserData("0","1","2","3")
     response.status(200).json({ message : "Hello world"})
+    return;
 });
 
 app.post('/user/register', (req, res) => {
     const { name, password, email } = req.body
-    if( name == null || password == null || emaill == null)
+    if( name === null || password === null || emaill === null)
     {
         res.status(400).json({ message : "One of required parameters is missing : {name, password, email}" });
+        return;
     }
     auth.fetchSignInMethodsForEmail(email).then(
         function(value) {        
             if (value.length > 0) 
             {
                 res.status(400).json({ message : "Unable to register, email is allready in use" })
+                return;
             }
             else 
             {
-                auth.createUserWithEmailAndPassword(email, password).catch(function(error) {    
-                    res.status(400).json({ 
-                        message : error.message,
-                        errorCode : error.code
-                    })
-                }).then(function(value) {
+                auth.createUserWithEmailAndPassword(email, password).then(function(value) {
 
                     func.createNewUser(value.user.uid, email, name, "customer").then(
                         function(newUser) {
@@ -48,29 +46,48 @@ app.post('/user/register', (req, res) => {
                                 message : "User was succesfully created",
                                 userId : newUser.id
                             })
+                            return;
                         },
                         function(error) {
                             res.status(400).json({ 
                                 message : error.message,
                                 errorCode : error.code
                             })
+                            return;
                         }
-                    )
+                    ).catch(function(error) {    
+                        res.status(400).json({ 
+                            message : error.message,
+                            errorCode : error.code
+                        })
+                        return;
+                    });
+                    return;
+
+                }).catch(function(error) {    
+                    res.status(400).json({ 
+                        message : error.message,
+                        errorCode : error.code
+                    })
+                    return;
                 });
             }
+            return;
     }).catch(function (error) {
         res.status(400).json({ 
             message : error.message,
             errorCode : error.code
         })
+        return;
     });
 });
 
 app.post('/user/login', (req, res) => {
     const { password, email } = req.body
-    if( password == null || email == null)
+    if( password === null || email === null)
     {
         res.status(400).json({ message : "One of required parameters is missing : {password, email}" });
+        return;
     }
     console.log(password + " " + email)
     auth.signInWithEmailAndPassword(email, password).then(
@@ -79,29 +96,33 @@ app.post('/user/login', (req, res) => {
                 message : "User " + email + " succesfully signed in",
                 userId : value.user.uid
             })
+            return;
         }, 
         function(error){
             res.status(400).json({
                 errorCode : error.code,
                 message : error.message
             })
+            return;
         }).catch(function (error) {
             res.status(400).json({
                 errorCode : error.code,
                 message : error.message
             })
+            return;
         });
 });
 
 app.post('/order/createNew', (req, res) => {
     const { userId, restaurantId, tableId } = req.body;
-    if ( restaurantId == null || tableId == null || userId == null ){
+    if ( restaurantId === null || tableId === null || userId === null ){
         res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, userId}" });
+        return;
     }
     func.checkTableIfFree(restaurantId, tableId).then(function (value) {
         var isTableEmpty = value
         console.log(isTableEmpty)
-        if (isTableEmpty == true)
+        if (isTableEmpty === true)
         {
             var v = func.createNewOrder(restaurantId, tableId, userId).then(function (value){
                 console.log(value)
@@ -109,10 +130,20 @@ app.post('/order/createNew', (req, res) => {
                     message : "New order was created",
                     order : value
                 })
+                return;
             }, function (error){
                 console.log(error)
                 res.status(500)
+                return;
+            }).catch(function (error) {
+                res.status(400).json({
+                    errorCode : error.code,
+                    message : error.message
+                })
+                return;
             });
+
+            return;
         }
         else
         {
@@ -120,30 +151,38 @@ app.post('/order/createNew', (req, res) => {
                 order : isTableEmpty,
                 message : "Table already has opened order."
             })
+            return;
         }
     }, function (error){
         console.log(error)
         res.status(500)
+        return;
+    }).catch(function (error) {
+        res.status(400).json({
+            errorCode : error.code,
+            message : error.message
+        })
+        return;
     });
  })
 
 app.post('/order/joinRequest', (req, res) => {
     const { userId, restaurantId, tableId, orderId } = req.body;
-    if ( userId == null || restaurantId == null || tableId == null || orderId == null )
+    if ( userId === null || restaurantId === null || tableId === null || orderId === null )
     {
         res.status(400).json({ message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId}" })
         return;
     }
     func.getOrder(restaurantId, tableId, orderId).then(function (value){
-        if (value == null){
+        if (value === null){
             res.status(400).json({ message : "No order with given path found" });
             return;
         }
         func.getActiveStatusOfUser(restaurantId, tableId, orderId, userId).then(function (value){
-            if(value != null)
+            if(value !== null)
             {
                 res.status(400).json({ message : "User is allready in order" });
-                return 
+                return;
             }
             else
             {
@@ -153,79 +192,123 @@ app.post('/order/joinRequest', (req, res) => {
                         message : "New request for join table was created.",
                         request : value
                     })
+                    return;
                 },
                 function(error) {
                     res.status(400).json({
                         errorCode : error.code,
                         message : error.message
                     })
-                })  
+                    return;
+                }).catch(function (error) {
+                    res.status(400).json({
+                        errorCode : error.code,
+                        message : error.message
+                    })
+                    return;
+                });
+                return;  
             }
             
         }, function(error){
             res.status(500).json({ message : "Couldn't get your request"})
+            return;
+        }).catch(function (error) {
+            res.status(400).json({
+                errorCode : error.code,
+                message : error.message
+            })
+            return;
+        });
+        return;
+    }).catch(function (error) {
+        res.status(400).json({
+            errorCode : error.code,
+            message : error.message
         })
-    })
+        return;
+    });
 
 })
 
 app.put('/order/addNewUser', (req, res) => {
     const { userId, orderId, requestId, restaurantId, tableId, accepted } = req.body;
 
-    if (userId == null || orderId == null || requestId == null || restaurantId == null || tableId == null || accepted == null)
+    if (userId === null || orderId === null || requestId === null || restaurantId === null || tableId === null || accepted === null)
     {
         res.status(400).json({
             message : "One or more of these fields - userId, orderId, requestId, restaurantId, tableId, accepted - are missing."
         })
+        return;
     }
 
     func.getJoinRequest(restaurantId, tableId, requestId).then(
         function(value) {
-            if  (value != null){
-                if (value.aprover == userId) {
-                    if (accepted == "true") {
+            if  (value !== null){
+                if (value.aprover === userId) {
+                    if (accepted === "true") {
                         func.addNewUserToOrder(value.requirer, orderId, requestId, restaurantId, tableId).then(
                             function(value) {
                                 res.status(200).json({
                                     message : "New user was added to order.",
                                     order : value
                                 })
+                                return;
                             },
                             function(error) {
                                 res.status(400).json({
                                     errorCode : error.code,
                                     message : error.message
                                 })
+                                return;
                             }
-                        );
+                        ).catch(function (error) {
+                            res.status(400).json({
+                                errorCode : error.code,
+                                message : error.message
+                            })
+                            return;
+                        });
+                        return;
                     }
-                    else if (accepted == "false") {
+                    else if (accepted === "false") {
                         func.rejectJoinRequest(value.requirer, restaurantId, tableId, requestId, orderId).then(
                             function(value) {
                                 res.status(200).json({
                                     message : "Join request was rejected.",
                                     order : value
                                 })
+                                return;
                             },
                             function(error) {
                                 res.status(400).json({
                                     errorCode : error.code,
                                     message : error.message
                                 })
+                                return;
                             }
-                        )
+                        ).catch(function (error) {
+                            res.status(400).json({
+                                errorCode : error.code,
+                                message : error.message
+                            })
+                            return;
+                        });
+                        return;
                     }
                     else {
                         console.log("aaa")
                         res.status(400).json({
                             message : "Bad request."
                         })
+                        return;
                     }
                 }
                 else {
                     res.status(400).json({
                         message : "User is not an approver of request."
                     })
+                    return;
                 }
             }
             else {
@@ -234,6 +317,7 @@ app.put('/order/addNewUser', (req, res) => {
                 res.status(400).json({
                     message : "Bad request."
                 })
+                return;
             }
         },
         function(error) {
@@ -241,114 +325,143 @@ app.put('/order/addNewUser', (req, res) => {
                 errorCode : error.code,
                 message : "Request does not exist."
             })
+            return;
         }
-    )   
+    ).catch(function (error) {
+        res.status(400).json({
+            errorCode : error.code,
+            message : error.message
+        })
+        return;
+    });   
 })
 
 app.get('/restaurant/getMenu', (req, res) => {
     const { restaurantId } = req.body;
-    if ( restaurantId == null ){
+    if ( restaurantId === null ){
         res.status(400).json({ message : "Missing restaurantId" });
+        return;
     }
-    func.getMenu(restaurantId).then(function (value){
-        if (value != null )
-        {
-            res.status(200).json({ menu : value.foods });
-        }
-        else
-        {
-            res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
-        }
-    }, function(error){
-        res.status(500).json({ message : "Couldn't get your request"})
+    func.getMenu(restaurantId).then(
+        function (value){
+            if (value !== null )
+            {
+                res.status(200).json({ menu : value.foods });
+                return;
+            }
+            else
+            {
+                res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
+                return;
+            }
+        }, function(error){
+            res.status(500).json({ message : "Couldn't get your request"})
+            return;
     }).catch(function (error) {
         res.status(500).json({ message : "Couldn't get your request"})
-    })
+        return;
+    });
 })
 
 app.get('/restaurant/getFood', (req, res) => {
     const { restaurantId, foodId } = req.body;
-    if ( restaurantId == null || restaurantId.length <= 0 || foodId == null || foodId.length <= 0 ){
+    if ( restaurantId === null || restaurantId.length <= 0 || foodId === null || foodId.length <= 0 ){
         res.status(400).json({ message : "Missing restaurantId" });
         return
     }
 
     console.log(restaurantId + " " + foodId)
     func.getFood(restaurantId, foodId).then(function (value){
-        if (value != null )
+        if (value !== null )
         {
-
             res.status(200).json( value );
+            return;
         }
         else
         {
             func.getNumberOfFoodsInRestaurant(restaurantId).then(function (value) {
-                if (value == null)
+                if (value === null)
                 {
                     res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
+                    return;
                 }
                 else
                 {
                     res.status(400).json({ message : "Bad food Id, restaurant has " + value + " items on menu" });
+                    return;
                 }
-            })
+            }).catch(function (error) {
+                res.status(400).json({
+                    errorCode : error.code,
+                    message : error.message
+                })
+                return;
+            });
+            return;
         }
     }, function(error){
         res.status(500).json({ message : "Couldn't get your request"})
+        return;
     }).catch(function (error) {
         res.status(500).json({ message : "Couldn't get your request"})
-    })
+        return;
+    });
 })
 
 app.put('/order/addNewItem', (req, res) => {
     const { restaurantId, userId, orderId, tableId, foods } = req.body;
 
-    if (userId == null || orderId == null || restaurantId == null || tableId == null || foods == null)
+    if (userId === null || orderId === null || restaurantId === null || tableId === null || foods === null)
     {
         res.status(400).json({
             message : "One or more of these fields - userId, orderId, restaurantId, tableId, foods - are missing."
         })
+        return;
     }
 
-    if(foods.length == 0)
+    if(foods.length === 0)
     {
         res.status(400).json({
             message : "Field foods can not be empty."
         })
+        return;
     }
 
     for(var i = 0; i < foods.length; i++) {
-        if( foods[i].amount == null || foods[i].id == null) {
+        if( foods[i].amount === null || foods[i].id === null) {
             res.status(400).json({
                 message : "Bad request."
             })
+            return;
         }
     }
     
     func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods).then(
         function(value) {
-            if (value != null) {
-                if(value == -1){
+            if (value !== null) {
+                if(value === -1){
                     res.status(400).json({ message : "Unexisting item wanted" })
-                    return
+                    return;
                 }
-                if(value == -2){
+                if(value === -2){
                     res.status(400).json({ message : "No order exists for given parameters" })
-                    return
+                    return;
                 }
-                if(value == -3){
+                if(value === -3){
                     res.status(400).json({ message : "User is not amongst active user in order" })
-                    return
+                    return;
                 }
                 res.status(200).json({
                     message : "Order was updated.",
                     order : value
                 })
+                return;
             }
             else {
                 res.status(500).json({
                     message : "Can not process your request."
                 })
+                return;
             }
         },
         function(error) {
@@ -356,29 +469,41 @@ app.put('/order/addNewItem', (req, res) => {
                 code : error.code,
                 message : error.message
             })
+            return;
         }
-    )
+    ).catch(function (error) {
+        res.status(400).json({
+            errorCode : error.code,
+            message : error.message
+        })
+        return;
+    });
 })
 
 app.get('/order', (req, res) => {
     const { restaurantId, tableId, orderId, userId } = req.body;
-    if ( restaurantId == null || tableId == null || orderId == null ){
+    if ( restaurantId === null || tableId === null || orderId === null ){
         res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, orderId}" });
+        return;
     }
     
         func.getOrder(restaurantId, tableId, orderId).then(function (value){
-            if (value != null )
+            if (value !== null )
             {
                 res.status(200).json( value );
+                return;
             }
             else
             {
                 res.status(400).json({ message : "Bad request, no order for input parameters" });
+                return;
             }
         }, function(error){
             res.status(500).json({ message : "Couldn't get your request"})
+            return;
         }).catch(function (error) {
             res.status(500).json({ message : "Couldn't get your request"})
+            return;
         })
   
 
@@ -388,63 +513,77 @@ app.get('/order', (req, res) => {
 app.post('/order/transferRequest', (req, res) => {
     const { requirerId, approverId, restaurantId, tableId, orderId, item } = req.body;
 
-    if (requirerId == null || approverId == null || restaurantId == null || tableId == null || orderId == null || item == null) {
+    if (requirerId === null || approverId === null || restaurantId === null || tableId === null || orderId === null || item === null) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {requirerId, approverId, restaurantId, tableId, orderId, item}" 
         })
+        return;
     }
 
-    if (item.id == null || item.amount == null) {
+    if (item.id === null || item.amount === null) {
         res.status(400).json({ 
             message : "One of required parameters in field 'item' is missing : {id, amount}" 
         })
+        return;
     }
 
     if (item.amount <= 0) {
         res.status(400).json({ 
             message : "Amount of item must be more then 0." 
         })
-        return
+        return;
     }
 
     func.getActiveStatusOfUser(restaurantId, tableId, orderId, requirerId).then(
         function(requirerStatus) {
             
-            if (requirerStatus == "active") {
+            if (requirerStatus === "active") {
                 func.getActiveStatusOfUser(restaurantId, tableId, orderId, approverId).then(
                     function(approverStatus) {
                         
-                        if (approverStatus == "active") {
+                        if (approverStatus === "active") {
                             func.createTransferRequest(requirerId, approverId, restaurantId, tableId, orderId, item).then(
                                 function (request) {
-                                    if(request != null) {
-                                        if (request == false) {
+                                    if(request !== null) {
+                                        if (request === false) {
                                             res.status(400).json({
                                                 message : "User does not have enough items to transfer."
                                             })
+                                            return;
                                         }            
                                         res.status(200).json({
                                             message : "New request for transfer item was created.",
                                             request : request
                                         })
+                                        return;
                                     }
                                     else {
                                         res.status(500).json({
                                             message : "Can not process your request."
                                         })
+                                        return;
                                     }
                                 },
                                 function(error) {
                                     res.status(500).json({
                                          message : "Can not process your request."
                                     })
+                                    return;
                                 }
-                            )
+                            ).catch(function (error) {
+                                res.status(400).json({
+                                    errorCode : error.code,
+                                    message : error.message
+                                })
+                                return;
+                            });
+                            return;
                         }
                         else {
                             res.status(400).json({ 
                                 message : "Bad request." 
                             })
+                            return;
                         }
                     },
                     function(error) {
@@ -452,13 +591,22 @@ app.post('/order/transferRequest', (req, res) => {
                             code: error.code,
                             message : error.message
                         })
+                        return;
                     }
-                )
+                ).catch(function (error) {
+                    res.status(400).json({
+                        errorCode : error.code,
+                        message : error.message
+                    })
+                    return;
+                });
+                return;
             }
             else {
                 res.status(400).json({ 
                     message : "Bad request." 
                 })
+                return;
             }
         },
         function(error) {
@@ -466,32 +614,42 @@ app.post('/order/transferRequest', (req, res) => {
                 code: error.code,
                 message : error.message
             })
+            return;
         }
-    )
+    ).catch(function (error) {
+        res.status(400).json({
+            errorCode : error.code,
+            message : error.message
+        })
+        return;
+    });
 })
 
 app.put('/order/acceptTransfer', (req, res) => {
     const { userId, restaurantId, tableId, orderId, requestId, aproved } = req.body;
 
-    if (userId == null || restaurantId == null || tableId == null || orderId == null || requestId == null || aproved == null) {
+    if (userId === null || restaurantId === null || tableId === null || orderId === null || requestId === null || aproved === null) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId, requestId, aproved}" 
         })
+        return;
     }
 
-    if(aproved == true){
+    if(aproved === true){
         func.acceptTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
             function(value) {
-                if (value != false) {
+                if (value !== false) {
                     res.status(200).json({
                         message : "Item succefully transfered.",
                         order : value
                     })
+                    return;
                 }
                 else {
                     res.status(400).json({
                         message : "Bad request."
                     }) 
+                    return;
                 }
             },
             function(error) {
@@ -499,22 +657,32 @@ app.put('/order/acceptTransfer', (req, res) => {
                     errorCode : error.code,
                     message : error.message
                 })
+                return;
             }
-        )   
+        ).catch(function (error) {
+            res.status(400).json({
+                errorCode : error.code,
+                message : error.message
+            })
+            return;
+        });
+        return;   
     }
     else{
         func.rejectTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
             function(value) {
-                if (value != false) {
+                if (value !== false) {
                     res.status(200).json({
                         message : "Item transfer succefully rejected.",
                         order : value
                     })
+                    return;
                 }
                 else {
                     res.status(400).json({
                         message : "Bad request."
                     }) 
+                    return;
                 }
             },
             function(error) {
@@ -522,8 +690,16 @@ app.put('/order/acceptTransfer', (req, res) => {
                     errorCode : error.code,
                     message : error.message
                 })
+                return;
             }
-        )   
+        ).catch(function (error) {
+            res.status(400).json({
+                errorCode : error.code,
+                message : error.message
+            })
+            return;
+        }); 
+        return;
     }
 
 
@@ -532,10 +708,11 @@ app.put('/order/acceptTransfer', (req, res) => {
 app.post('/payment/', (req, res) => {
     const { sum, orderId, userId, tableId, restaurantId } = req.body
 
-    if (sum == null || orderId == null || userId == null || restaurantId == null || tableId == null ) {
+    if (sum === null || orderId === null || userId === null || restaurantId === null || tableId === null ) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {sum, orderId, userId, tableId, restaurantId}" 
         })
+        return;
     }
 
 })
