@@ -13,7 +13,7 @@ exports.createNewUser = async function (userId, email, name, role) {
   
   var v = await update(updates);
   
-  if (v == true) {
+  if (v === true) {
     return newUser;
   }
   return v;
@@ -36,7 +36,7 @@ exports.createNewOrder = async function ( restaurantId, tableId, userId ) {
   updates["orders/" + restaurantId + "/" + tableId + "/activeOrder"] = orderId;
   updates[path + "/" + orderId] = order;
   var v = await update(updates);
-  if (v == true )
+  if (v === true )
   {
     return order;
   }
@@ -85,7 +85,7 @@ exports.createJoinTableRequest = async function (restaurantId, tableId, userId, 
   updates["orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId ] = "requested";
 
   var v = await update(updates);
-  if(v == true) 
+  if(v === true) 
   {
     return request;
   }
@@ -100,7 +100,7 @@ exports.addNewUserToOrder = async function (requirerId, orderId, requestId, rest
   updates[path + "/joinRequests/" + requestId] = null
   updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
   var v = await update(updates);
-  if(v == true) 
+  if(v === true) 
   {
     var order = await read(path)
     return order;
@@ -117,7 +117,7 @@ exports.rejectJoinRequest = async function (requirerId, restaurantId, tableId, r
   updates["requests/joinTable/" + restaurantId + "/" + tableId + "/" + requestId] = null
 
   var v = await update(updates);
-  if(v == true) 
+  if(v === true) 
   {
     var order = await read(path)
     return order;
@@ -133,7 +133,7 @@ exports.getJoinRequest =  async function(restaurantId, tableId, requestId) {
 exports.checkTableIfFree = async function(restaurantId, tableId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/activeOrder";
   var active = await read(path);
-  if(active == null)
+  if(active === null)
     return true
   else
     return active
@@ -145,40 +145,56 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
   var order = await read(pathOrder)
   var isActive = await read("orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/activeUsers/" + userId)
 
-  if(order == null)
+  if(order === null)
     return -2
   
     
-  if( isActive != "active"){
+  if( isActive !== "active"){
     return -3
   }
+  const f = [];
 
   for(var i = 0; i < foods.length; i++) {
-    var food = await read("restaurants/" + restaurantId + "/foods/" + foods[i].id);
-    if(food == null)
-    {
-      console.log("restaurants/" + restaurantId + "/foods/" + foods[i].id)
-      return -1
-    }
-    var pathItem = pathOrder + "/suborders/" + userId + "/items/" + foods[i].id
+    console.log(foods[i])
 
-    updates[pathItem + "/name"] = food.name;
+    f.push(read("restaurants/" + restaurantId + "/foods/" + foods[i].id).then(func.bind(null,pathOrder, userId, foods[i], updates)))
+  //  var food = await read("restaurants/" + restaurantId + "/foods/" + foods[i].id);
 
-    var ordered = await read(pathItem + "/ordered");
-
-    if(ordered == null)
-      updates[pathItem + "/ordered"] = foods[i].amount;
-    else
-      updates[pathItem + "/ordered"] = foods[i].amount + ordered;
   }
+console.log("Pici")
+  await Promise.all(f);
+  console.log("Kurva")
 
   var v = await update(updates);
-  if(v == true) 
+  if(v === true) 
   {
     order = await read(pathOrder)
     return order;
   }
   return v;
+}
+
+async function  func(pathOrder, userId, foods, updates, food)
+{
+  if(food === null)
+  {
+    console.log("restaurants/" + restaurantId + "/foods/" + foods.id)
+    return -1
+  }
+  var pathItem = pathOrder + "/suborders/" + userId + "/items/" + foods.id
+
+  updates[pathItem + "/name"] = food.name;
+  updates[pathItem + "/price"] = food.price;
+  updates[pathItem + "/id"] = food.id;
+
+  var ordered = await read(pathItem + "/ordered");
+
+  if(ordered === null)
+    updates[pathItem + "/ordered"] = foods.amount;
+  else
+    updates[pathItem + "/ordered"] = foods.amount + ordered;
+
+  return
 }
 
 exports.createTransferRequest = async function (requirerId, approverId, restaurantId, tableId, orderId, item) {
@@ -188,7 +204,7 @@ exports.createTransferRequest = async function (requirerId, approverId, restaura
   var countOfDelivered = await read(pathItem + "/delivered")
   var countOfTransfered = await read(pathItem + "/transfered")
 
-  if (countOfDelivered == null || countOfDelivered < item.amount) {
+  if (countOfDelivered === null || countOfDelivered < item.amount) {
     return false;
   }
 
@@ -208,7 +224,7 @@ exports.createTransferRequest = async function (requirerId, approverId, restaura
   updates["orders/" + restaurantId + "/" + tableId + "/orders/" + orderId + "/transferRequests/" + requestId ] = true;
   updates[pathItem + "/delivered"] = countOfDelivered - item.amount
 
-  if (countOfTransfered == null) {
+  if (countOfTransfered === null) {
     updates[pathItem + "/transfered"] = item.amount
   }
   else {
@@ -216,7 +232,7 @@ exports.createTransferRequest = async function (requirerId, approverId, restaura
   }
 
   var v = await update(updates);
-  if(v == true) 
+  if(v === true) 
   {
     return request;
   }
@@ -229,7 +245,7 @@ exports.acceptTransferItem = async function(userId, restaurantId, tableId, order
 
   var request = await read(pathRequest);
 
-  if(request == null) {
+  if(request === null) {
     return false;
   }
   
@@ -238,20 +254,20 @@ exports.acceptTransferItem = async function(userId, restaurantId, tableId, order
   var countOfDelivered = await read(path1);
   var countOfTransfered = await read(path2);
 
-  if(userId != request.aprover) {
+  if(userId !== request.aprover) {
     return false;
   }
 
   var updates = {}
 
-  if (countOfDelivered == null) {
+  if (countOfDelivered === null) {
     updates[path1] = request.item.amount 
   }
   else {
     updates[path1] = countOfDelivered + request.item.amount 
   }
 
-  if (countOfTransfered == null || countOfTransfered == request.item.amount) {
+  if (countOfTransfered === null || countOfTransfered === request.item.amount) {
     updates[path2] = null
   }
   else {
@@ -262,7 +278,7 @@ exports.acceptTransferItem = async function(userId, restaurantId, tableId, order
   updates[pathOrder + "/transferRequests/" + requestId] = null;
 
   var v = await update(updates);
-  if(v == true) {
+  if(v === true) {
     var order = await read(pathOrder);
     return order;
   }
@@ -275,7 +291,7 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
 
   var request = await read(pathRequest);
 
-  if(request == null) {
+  if(request === null) {
     return false;
   }
   
@@ -284,20 +300,20 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
   var countOfDelivered = await read(path1);
   var countOfTransfered = await read(path2);
 
-  if(userId != request.aprover) {
+  if(userId !== request.aprover) {
     return false;
   }
 
   var updates = {}
 
-  if (countOfDelivered == null) {
+  if (countOfDelivered === null) {
     updates[path1] = request.item.amount 
   }
   else {
     updates[path1] = countOfDelivered + request.item.amount 
   }
 
-  if (countOfTransfered == null || countOfTransfered == request.item.amount) {
+  if (countOfTransfered === null || countOfTransfered === request.item.amount) {
     updates[path2] = null
   }
   else {
@@ -308,7 +324,7 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
   updates[pathOrder + "/transferRequests/" + requestId] = null;
 
   var v = await update(updates);
-  if(v == true) {
+  if(v === true) {
     var order = await read(pathOrder);
     return order;
   }
@@ -319,7 +335,7 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
 function read (path) {
    return firebase.database().ref(path).once('value').then(function (snapshot) {
     var data = snapshot.val() || null; 
-    console.log(snapshot.val())
+ //   console.log(snapshot.val())
     return data;
   }, function (error){
     console.log("Couldnt read data on path :" + path);

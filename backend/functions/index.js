@@ -17,13 +17,12 @@ firebase.initializeApp(config);
 var auth = firebase.auth();
 
 app.get('/helloWorld', (request, response) => {
-    writeUserData("0","1","2","3")
     response.status(200).json({ message : "Hello world"})
 });
 
 app.post('/user/register', (req, res) => {
     const { name, password, email } = req.body
-    if( name == null || password == null || emaill == null)
+    if( name === null || password === null || email === null)
     {
         res.status(400).json({ message : "One of required parameters is missing : {name, password, email}" });
     }
@@ -58,6 +57,7 @@ app.post('/user/register', (req, res) => {
                     )
                 });
             }
+            return;
     }).catch(function (error) {
         res.status(400).json({ 
             message : error.message,
@@ -68,7 +68,7 @@ app.post('/user/register', (req, res) => {
 
 app.post('/user/login', (req, res) => {
     const { password, email } = req.body
-    if( password == null || email == null)
+    if( password === null || email === null)
     {
         res.status(400).json({ message : "One of required parameters is missing : {password, email}" });
     }
@@ -95,13 +95,13 @@ app.post('/user/login', (req, res) => {
 
 app.post('/order/createNew', (req, res) => {
     const { userId, restaurantId, tableId } = req.body;
-    if ( restaurantId == null || tableId == null || userId == null ){
+    if ( restaurantId === null || tableId === null || userId === null ){
         res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, userId}" });
     }
     func.checkTableIfFree(restaurantId, tableId).then(function (value) {
         var isTableEmpty = value
         console.log(isTableEmpty)
-        if (isTableEmpty == true)
+        if (isTableEmpty === true)
         {
             var v = func.createNewOrder(restaurantId, tableId, userId).then(function (value){
                 console.log(value)
@@ -129,18 +129,18 @@ app.post('/order/createNew', (req, res) => {
 
 app.post('/order/joinRequest', (req, res) => {
     const { userId, restaurantId, tableId, orderId } = req.body;
-    if ( userId == null || restaurantId == null || tableId == null || orderId == null )
+    if ( userId === null || restaurantId === null || tableId === null || orderId === null )
     {
         res.status(400).json({ message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId}" })
         return;
     }
     func.getOrder(restaurantId, tableId, orderId).then(function (value){
-        if (value == null){
+        if (value === null){
             res.status(400).json({ message : "No order with given path found" });
             return;
         }
         func.getActiveStatusOfUser(restaurantId, tableId, orderId, userId).then(function (value){
-            if(value != null)
+            if(value !== null)
             {
                 res.status(400).json({ message : "User is allready in order" });
                 return 
@@ -172,7 +172,7 @@ app.post('/order/joinRequest', (req, res) => {
 app.put('/order/addNewUser', (req, res) => {
     const { userId, orderId, requestId, restaurantId, tableId, accepted } = req.body;
 
-    if (userId == null || orderId == null || requestId == null || restaurantId == null || tableId == null || accepted == null)
+    if (userId === null || orderId === null || requestId === null || restaurantId === null || tableId === null || accepted === null)
     {
         res.status(400).json({
             message : "One or more of these fields - userId, orderId, requestId, restaurantId, tableId, accepted - are missing."
@@ -181,9 +181,9 @@ app.put('/order/addNewUser', (req, res) => {
 
     func.getJoinRequest(restaurantId, tableId, requestId).then(
         function(value) {
-            if  (value != null){
-                if (value.aprover == userId) {
-                    if (accepted == "true") {
+            if  (value !== null){
+                if (value.aprover === userId) {
+                    if (accepted === "true") {
                         func.addNewUserToOrder(value.requirer, orderId, requestId, restaurantId, tableId).then(
                             function(value) {
                                 res.status(200).json({
@@ -199,7 +199,7 @@ app.put('/order/addNewUser', (req, res) => {
                             }
                         );
                     }
-                    else if (accepted == "false") {
+                    else if (accepted === "false") {
                         func.rejectJoinRequest(value.requirer, restaurantId, tableId, requestId, orderId).then(
                             function(value) {
                                 res.status(200).json({
@@ -246,12 +246,13 @@ app.put('/order/addNewUser', (req, res) => {
 })
 
 app.get('/restaurant/getMenu', (req, res) => {
-    const { restaurantId } = req.body;
-    if ( restaurantId == null ){
+  //  const { restaurantId } 
+    const restaurantId = req.query.restaurantID;
+    if ( restaurantId === null ){
         res.status(400).json({ message : "Missing restaurantId" });
     }
     func.getMenu(restaurantId).then(function (value){
-        if (value != null )
+        if (value !== null )
         {
             res.status(200).json({ menu : value.foods });
         }
@@ -267,15 +268,18 @@ app.get('/restaurant/getMenu', (req, res) => {
 })
 
 app.get('/restaurant/getFood', (req, res) => {
-    const { restaurantId, foodId } = req.body;
-    if ( restaurantId == null || restaurantId.length <= 0 || foodId == null || foodId.length <= 0 ){
+    const restaurantId = req.query.restaurantID;
+    const foodId = req.query.foodId;
+
+  //  const { restaurantId, foodId } = req.body;
+    if ( restaurantId === null || restaurantId.length <= 0 || foodId === null || foodId.length <= 0 ){
         res.status(400).json({ message : "Missing restaurantId" });
         return
     }
 
     console.log(restaurantId + " " + foodId)
     func.getFood(restaurantId, foodId).then(function (value){
-        if (value != null )
+        if (value !== null )
         {
 
             res.status(200).json( value );
@@ -283,7 +287,7 @@ app.get('/restaurant/getFood', (req, res) => {
         else
         {
             func.getNumberOfFoodsInRestaurant(restaurantId).then(function (value) {
-                if (value == null)
+                if (value === null)
                 {
                     res.status(400).json({ message : "Bad restaurand Id, no restaurant with that Id exists" });
                 }
@@ -302,15 +306,14 @@ app.get('/restaurant/getFood', (req, res) => {
 
 app.put('/order/addNewItem', (req, res) => {
     const { restaurantId, userId, orderId, tableId, foods } = req.body;
-
-    if (userId == null || orderId == null || restaurantId == null || tableId == null || foods == null)
+    if (userId === null || orderId === null || restaurantId === null || tableId === null || foods === null)
     {
         res.status(400).json({
             message : "One or more of these fields - userId, orderId, restaurantId, tableId, foods - are missing."
         })
     }
 
-    if(foods.length == 0)
+    if(foods.length === 0)
     {
         res.status(400).json({
             message : "Field foods can not be empty."
@@ -318,7 +321,7 @@ app.put('/order/addNewItem', (req, res) => {
     }
 
     for(var i = 0; i < foods.length; i++) {
-        if( foods[i].amount == null || foods[i].id == null) {
+        if( foods[i].amount === null || foods[i].id === null) {
             res.status(400).json({
                 message : "Bad request."
             })
@@ -327,16 +330,16 @@ app.put('/order/addNewItem', (req, res) => {
     
     func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods).then(
         function(value) {
-            if (value != null) {
-                if(value == -1){
+            if (value !== null) {
+                if(value === -1){
                     res.status(400).json({ message : "Unexisting item wanted" })
                     return
                 }
-                if(value == -2){
+                if(value === -2){
                     res.status(400).json({ message : "No order exists for given parameters" })
                     return
                 }
-                if(value == -3){
+                if(value === -3){
                     res.status(400).json({ message : "User is not amongst active user in order" })
                     return
                 }
@@ -361,13 +364,17 @@ app.put('/order/addNewItem', (req, res) => {
 })
 
 app.get('/order', (req, res) => {
-    const { restaurantId, tableId, orderId, userId } = req.body;
-    if ( restaurantId == null || tableId == null || orderId == null ){
+   // const { restaurantId, tableId, orderId } = req.body;
+    const restaurantId = req.query.restaurantId;
+    const tableId = req.query.tableId;
+    const orderId = req.query.orderId;
+
+    if ( restaurantId === null || tableId === null || orderId === null ){
         res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, orderId}" });
     }
-    
+
         func.getOrder(restaurantId, tableId, orderId).then(function (value){
-            if (value != null )
+            if (value !== null )
             {
                 res.status(200).json( value );
             }
@@ -388,13 +395,13 @@ app.get('/order', (req, res) => {
 app.post('/order/transferRequest', (req, res) => {
     const { requirerId, approverId, restaurantId, tableId, orderId, item } = req.body;
 
-    if (requirerId == null || approverId == null || restaurantId == null || tableId == null || orderId == null || item == null) {
+    if (requirerId === null || approverId === null || restaurantId === null || tableId === null || orderId === null || item === null) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {requirerId, approverId, restaurantId, tableId, orderId, item}" 
         })
     }
 
-    if (item.id == null || item.amount == null) {
+    if (item.id === null || item.amount === null) {
         res.status(400).json({ 
             message : "One of required parameters in field 'item' is missing : {id, amount}" 
         })
@@ -410,15 +417,15 @@ app.post('/order/transferRequest', (req, res) => {
     func.getActiveStatusOfUser(restaurantId, tableId, orderId, requirerId).then(
         function(requirerStatus) {
             
-            if (requirerStatus == "active") {
+            if (requirerStatus === "active") {
                 func.getActiveStatusOfUser(restaurantId, tableId, orderId, approverId).then(
                     function(approverStatus) {
                         
-                        if (approverStatus == "active") {
+                        if (approverStatus === "active") {
                             func.createTransferRequest(requirerId, approverId, restaurantId, tableId, orderId, item).then(
                                 function (request) {
-                                    if(request != null) {
-                                        if (request == false) {
+                                    if(request !== null) {
+                                        if (request === false) {
                                             res.status(400).json({
                                                 message : "User does not have enough items to transfer."
                                             })
@@ -473,16 +480,16 @@ app.post('/order/transferRequest', (req, res) => {
 app.put('/order/acceptTransfer', (req, res) => {
     const { userId, restaurantId, tableId, orderId, requestId, aproved } = req.body;
 
-    if (userId == null || restaurantId == null || tableId == null || orderId == null || requestId == null || aproved == null) {
+    if (userId === null || restaurantId === null || tableId === null || orderId === null || requestId === null || aproved === null) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {userId, restaurantId, tableId, orderId, requestId, aproved}" 
         })
     }
 
-    if(aproved == true){
+    if(aproved === true){
         func.acceptTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
             function(value) {
-                if (value != false) {
+                if (value !== false) {
                     res.status(200).json({
                         message : "Item succefully transfered.",
                         order : value
@@ -505,7 +512,7 @@ app.put('/order/acceptTransfer', (req, res) => {
     else{
         func.rejectTransferItem(userId, restaurantId, tableId, orderId, requestId).then(
             function(value) {
-                if (value != false) {
+                if (value !== false) {
                     res.status(200).json({
                         message : "Item transfer succefully rejected.",
                         order : value
@@ -525,14 +532,12 @@ app.put('/order/acceptTransfer', (req, res) => {
             }
         )   
     }
-
-
 })
 
 app.post('/payment/', (req, res) => {
     const { sum, orderId, userId, tableId, restaurantId } = req.body
 
-    if (sum == null || orderId == null || userId == null || restaurantId == null || tableId == null ) {
+    if (sum === null || orderId === null || userId === null || restaurantId === null || tableId === null ) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {sum, orderId, userId, tableId, restaurantId}" 
         })
