@@ -30,7 +30,7 @@ app.post('/user/register', (req, res) => {
         function(value) {        
             if (value.length > 0) 
             {
-                res.status(400).json({ message : "Unable to register, email is allready in use" })
+                res.status(400).json({ message : "Unable to register, email is already in use" })
             }
             else 
             {
@@ -45,7 +45,7 @@ app.post('/user/register', (req, res) => {
                         function(newUser) {
                             res.status(201).json({
                                 message : "User was succesfully created",
-                                userId : newUser.id
+                                user : newUser
                             })
                         },
                         function(error) {
@@ -75,9 +75,22 @@ app.post('/user/login', (req, res) => {
     console.log(password + " " + email)
     auth.signInWithEmailAndPassword(email, password).then(
         function(value) {
-            res.status(200).json({
-                message : "User " + email + " succesfully signed in",
-                userId : value.user.uid
+            func.getUser(value.user.uid).then(function (value){
+                if (value !== null )
+                {
+                    res.status(200).json({ 
+                        message : "User " + email + " succesfully signed in",
+                        user : value 
+                    });
+                }
+                else
+                {
+                    res.status(400).json({ message : "Bad user Id, no user with that Id exists" });
+                }
+            }, function(error){
+                res.status(500).json({ message : "Couldn't get your request"})
+            }).catch(function (error) {
+                res.status(500).json({ message : "Couldn't get your request"})
             })
         }, 
         function(error){
@@ -172,7 +185,7 @@ app.post('/order/joinRequest', (req, res) => {
         func.getActiveStatusOfUser(restaurantId, tableId, orderId, userId).then(function (value){
             if(value !== null)
             {
-                res.status(400).json({ message : "User is allready in order" });
+                res.status(400).json({ message : "User is already in order" });
                 return 
             }
             else
