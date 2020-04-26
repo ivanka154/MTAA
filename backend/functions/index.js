@@ -93,10 +93,33 @@ app.post('/user/login', (req, res) => {
         });
 });
 
+app.get('/user', (req, res) => {
+    const userId = req.query.userId;
+    if( userId === null )
+    {
+        res.status(400).json({ message : "One of required parameters is missing : {userId}" });
+    }
+    func.getUser(userId).then(function (value){
+        if (value !== null )
+        {
+            res.status(200).json({ user : value });
+        }
+        else
+        {
+            res.status(400).json({ message : "Bad user Id, no user with that Id exists" });
+        }
+    }, function(error){
+        res.status(500).json({ message : "Couldn't get your request"})
+    }).catch(function (error) {
+        res.status(500).json({ message : "Couldn't get your request"})
+    })
+});
+
 app.post('/order/createNew', (req, res) => {
     const { userId, restaurantId, tableId } = req.body;
-    if ( restaurantId === null || tableId === null || userId === null ){
+    if ( restaurantId === null || tableId === null || userId === null || restaurantId.length <= 1 || tableId.length <= 0){
         res.status(400).json({ message : "One of required parameters is missing : {restaurantId, tableId, userId}" });
+        return
     }
     func.checkTableIfFree(restaurantId, tableId).then(function (value) {
         var isTableEmpty = value
@@ -113,6 +136,13 @@ app.post('/order/createNew', (req, res) => {
                 console.log(error)
                 res.status(500)
             });
+        }
+        else
+        if (isTableEmpty === false)
+        {
+            res.status(400).json({
+                message : "Unexisting table or restaurant."
+            })
         }
         else
         {

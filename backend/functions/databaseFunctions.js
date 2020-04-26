@@ -19,6 +19,11 @@ exports.createNewUser = async function (userId, email, name, role) {
   return v;
 }; 
 
+exports.getUser = async function (userId) {
+  var user = await read("users/" + userId);
+  return user;
+}; 
+
 exports.createNewOrder = async function ( restaurantId, tableId, userId ) {
   var path = "orders/" + restaurantId + "/" + tableId + "/orders";
   var orderId = getPushKey(path)
@@ -133,6 +138,9 @@ exports.getJoinRequest =  async function(restaurantId, tableId, requestId) {
 exports.checkTableIfFree = async function(restaurantId, tableId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/activeOrder";
   var active = await read(path);
+  var exists = await read("restaurants/" + restaurantId + "/tables/" + tableId)
+  if (exists === null)
+    return false
   if(active === null)
     return true
   else

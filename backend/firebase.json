@@ -13,6 +13,10 @@
     {
       "source" : "/user/login",
       "function" : "app"
+    },    
+    {
+      "source" : "/user",
+      "function" : "app"
     },
     {
       "source" : "/order/createNew",
