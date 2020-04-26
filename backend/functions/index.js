@@ -349,7 +349,7 @@ app.get('/restaurant/getFood', (req, res) => {
     })
 })
 
-app.put('/order/addNewItem', (req, res) => {
+app.post('/order/addNewItem', (req, res) => {
     const { restaurantId, userId, orderId, tableId, foods } = req.body;
     if (userId === null || orderId === null || restaurantId === null || tableId === null || foods === null)
     {
@@ -357,23 +357,26 @@ app.put('/order/addNewItem', (req, res) => {
             message : "One or more of these fields - userId, orderId, restaurantId, tableId, foods - are missing."
         })
     }
-
+console.log(req.body)
     if(foods.length === 0)
     {
         res.status(400).json({
             message : "Field foods can not be empty."
         })
     }
+    var v = JSON.parse(foods);
 
-    for(var i = 0; i < foods.length; i++) {
-        if( foods[i].amount === null || foods[i].id === null) {
+    foods1 = v;
+
+    for(var i = 0; i < foods1.length; i++) {
+        if( foods1[i].amount === null || foods1[i].id === null) {
             res.status(400).json({
                 message : "Bad request."
             })
         }
     }
     
-    func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods).then(
+    func.addNewItemToOrder(restaurantId, userId, orderId, tableId, foods1.foods).then(
         function(value) {
             if (value !== null) {
                 if(value === -1){
@@ -389,7 +392,7 @@ app.put('/order/addNewItem', (req, res) => {
                     return
                 }
                 res.status(200).json({
-                    message : "Order was updated.",
+                //    message : "Order was updated.",
                     order : value
                 })
             }

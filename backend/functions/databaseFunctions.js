@@ -166,9 +166,11 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
     return -3
   }
   const f = [];
+  console.log(foods)
 
   for(var i = 0; i < foods.length; i++) {
     console.log(foods[i])
+    console.log("------")
 
     f.push(read("restaurants/" + restaurantId + "/foods/" + foods[i].id).then(func.bind(null,pathOrder, userId, foods[i], updates)))
   //  var food = await read("restaurants/" + restaurantId + "/foods/" + foods[i].id);
@@ -200,6 +202,7 @@ async function func(pathOrder, userId, foods, updates, food)
 
   var ordered = await read(pathItem + "/ordered");
 
+  
   if(ordered === null)
     updates[pathItem + "/ordered"] = foods.amount;
   else
