@@ -39,6 +39,14 @@
       "function" : "app"
     },
     {
+      "source" : "/joinRequest",
+      "function" : "app"
+    },
+    {
+      "source" : "/transferRequest",
+      "function" : "app"
+    },
+    {
       "source" : "/order/addNewItem",
       "function" : "app"
     },

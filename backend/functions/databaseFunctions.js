@@ -135,6 +135,11 @@ exports.getJoinRequest =  async function(restaurantId, tableId, requestId) {
   return request
 }
 
+exports.getTransferRequest =  async function(restaurantId, tableId, requestId) {
+  var request = await read("requests/transferItem/" + restaurantId + "/" + tableId + "/" + requestId);
+  return request
+}
+
 exports.checkTableIfFree = async function(restaurantId, tableId) {
   var path = "orders/" + restaurantId + "/" + tableId + "/activeOrder";
   var active = await read(path);
@@ -169,9 +174,7 @@ exports.addNewItemToOrder = async function(restaurantId, userId, orderId, tableI
   //  var food = await read("restaurants/" + restaurantId + "/foods/" + foods[i].id);
 
   }
-console.log("Pici")
   await Promise.all(f);
-  console.log("Kurva")
 
   var v = await update(updates);
   if(v === true) 
@@ -182,7 +185,7 @@ console.log("Pici")
   return v;
 }
 
-async function  func(pathOrder, userId, foods, updates, food)
+async function func(pathOrder, userId, foods, updates, food)
 {
   if(food === null)
   {
@@ -339,6 +342,52 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
   return v;
 }
 
+
+
+exports.suborderHasItemsToPay = async function(restaurantId, tableId, userId, orderId) {
+  var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
+  var updates = {}
+  const f = [];
+
+  var suborder = await read(pathOrder + "/suborders/" + userId)
+  if(suborder === null)
+    return -1;
+
+  var isActive = await read(pathOrder + "/activeUsers/" + userId)
+  if(isActive !== "active")
+    return -2;
+
+  var transferRequests = await read(pathOrder + "/transferRequests/")
+  if (transferRequests !== null) {
+    for(var i = 0; i < transferRequests.length; i++) {
+      var request = "requests/transferItem/" + restaurantId + "/" + tableId + "/" + transferRequests[i];
+      var requirer = await read(request + "/requirer")
+      var approver = await read(request + "/aprover")
+
+      if(userId == requirer || userId == approver)
+        return -3;
+    }
+  }
+
+  var items = await read(suborder + "/items/")
+  if(items === null)
+    return -4; 
+
+  for(var i = 0; i < items.length; i++) {
+   // f.push(
+   //   read("restaurants/" + restaurantId + "/foods/" + foods[i].id)
+   // )
+  }
+  //await Promise.all(f);
+
+  var v = await update(updates);
+  if(v === true) 
+  {
+    order = await read(pathOrder)
+    return order;
+  }
+  return v;
+}
 
 function read (path) {
    return firebase.database().ref(path).once('value').then(function (snapshot) {

@@ -577,15 +577,135 @@ app.put('/order/acceptTransfer', (req, res) => {
     }
 })
 
+app.get('/joinRequest', (req, res) => {
+    const requestId = req.query.requestId;
+    const restaurantId = req.query.restaurantId;
+    const tableId = req.query.tableId;
+
+    if (requestId === null || restaurantId === null || tableId === null){
+        res.status(400).json({ message : "Missing requestId, restaurantId or tableId" });
+    }
+
+    func.getJoinRequest(restaurantId, tableId, requestId).then(function (value){
+        if (value !== null)
+        {
+            res.status(200).json({ request : value });
+        }
+        else
+        {
+            res.status(400).json({ message : "Request does not exist." });
+        }
+    }, function(error){
+        res.status(500).json({ message : "Couldn't get your request"})
+    }).catch(function (error) {
+        res.status(500).json({ message : "Couldn't get your request"})
+    })
+})
+
+app.get('/transferRequest', (req, res) => {
+    const requestId = req.query.requestId;
+    const restaurantId = req.query.restaurantId;
+    const tableId = req.query.tableId;
+
+    if (requestId === null || restaurantId === null || tableId === null){
+        res.status(400).json({ message : "Missing requestId, restaurantId or tableId" });
+    }
+
+    func.getTransferRequest(restaurantId, tableId, requestId).then(function (value){
+        if (value !== null)
+        {
+            res.status(200).json({ request : value });
+        }
+        else
+        {
+            res.status(400).json({ message : "Request does not exist." });
+        }
+    }, function(error){
+        res.status(500).json({ message : "Couldn't get your request"})
+    }).catch(function (error) {
+        res.status(500).json({ message : "Couldn't get your request"})
+    })
+})
+
 app.post('/payment/', (req, res) => {
     const { sum, orderId, userId, tableId, restaurantId } = req.body
 
     if (sum === null || orderId === null || userId === null || restaurantId === null || tableId === null ) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {sum, orderId, userId, tableId, restaurantId}" 
-        })
+        });
+        return;
     }
 
+    if (sum <= 0) {
+        res.status(400).json({ 
+            message : "Sum to pay could not be less or equal zero." 
+        });
+        return;
+    }
+
+    func.getOrder(restaurantId, tableId, orderId).then(function (value){
+        if (value === null){
+            res.status(400).json({ message : "No order with given path found" });
+            return;
+        }
+        func.getUser(userId).then(function (value){
+            if(value !== null)
+            {
+                func.suborderHasItemsToPay(restaurantId, tableId, userId, orderId).then(
+                    function(value) {
+                        switch (value) {
+                            case -1: 
+                                res.status(400).json({
+                                    message : "User's suborder does not exist."
+                                })
+                                break;
+                            case -2: 
+                                res.status(400).json({
+                                    message : "User is not an active user of order."
+                                })
+                                break;
+                            case -3: 
+                                res.status(400).json({
+                                    message : "User has pending item transfers."
+                                })
+                                break;
+                            case -4: 
+                                res.status(400).json({
+                                    message : "User's suborder does not contain any items to pay."
+                                })
+                                break;
+                            default: 
+                                res.status(200).json({
+                                    message : "New request for join table was created.",
+                                    request : value
+                                })
+                                break;
+                        }
+                    },
+                    function(error) {
+                        res.status(400).json({
+                            message : "Couldn't get your request"
+                        })
+                    }).catch(function (error) {
+                        res.status(500).json({ message : "Couldn't get your request"})
+                    }) 
+            }
+            else
+            {
+                res.status(400).json({ message : "User does not exist" });
+                return 
+            }
+            
+        }, function(error){
+            res.status(500).json({ message : "Couldn't get your request"})
+            return;
+        }).catch(function (error) {
+            res.status(500).json({ message : "Couldn't get your request"})
+        })
+        return;
+    })
+    
 })
 
 exports.app = functions.https.onRequest(app);
