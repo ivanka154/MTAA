@@ -628,9 +628,9 @@ app.get('/transferRequest', (req, res) => {
 })
 
 app.post('/payment/', (req, res) => {
-    const { sum, orderId, userId, tableId, restaurantId } = req.body
+    const { sum, orderId, userId, tableId, restaurantId, transferRequests } = req.body
 
-    if (sum === null || orderId === null || userId === null || restaurantId === null || tableId === null ) {
+    if (sum === null || orderId === null || userId === null || restaurantId === null || tableId === null) {
         res.status(400).json({ 
             message : "One of required parameters is missing : {sum, orderId, userId, tableId, restaurantId}" 
         });
@@ -652,7 +652,7 @@ app.post('/payment/', (req, res) => {
         func.getUser(userId).then(function (value){
             if(value !== null)
             {
-                func.suborderHasItemsToPay(restaurantId, tableId, userId, orderId).then(
+                func.pay(restaurantId, tableId, userId, orderId, transferRequests).then(
                     function(value) {
                         switch (value) {
                             case -1: 
@@ -677,18 +677,18 @@ app.post('/payment/', (req, res) => {
                                 break;
                             default: 
                                 res.status(200).json({
-                                    message : "New request for join table was created.",
-                                    request : value
+                                    message : "Order has been paid.",
+                                    order : value
                                 })
                                 break;
                         }
                     },
                     function(error) {
                         res.status(400).json({
-                            message : "Couldn't get your request"
+                            message : "Couldn't get your request1"
                         })
                     }).catch(function (error) {
-                        res.status(500).json({ message : "Couldn't get your request"})
+                        res.status(500).json({ message : "Couldn't get your request2"})
                     }) 
             }
             else
@@ -698,10 +698,10 @@ app.post('/payment/', (req, res) => {
             }
             
         }, function(error){
-            res.status(500).json({ message : "Couldn't get your request"})
+            res.status(500).json({ message : "Couldn't get your request3"})
             return;
         }).catch(function (error) {
-            res.status(500).json({ message : "Couldn't get your request"})
+            res.status(500).json({ message : "Couldn't get your request4"})
         })
         return;
     })

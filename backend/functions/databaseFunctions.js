@@ -342,12 +342,11 @@ exports.rejectTransferItem = async function(userId, restaurantId, tableId, order
   return v;
 }
 
-
-
-exports.suborderHasItemsToPay = async function(restaurantId, tableId, userId, orderId) {
+exports.pay = async function(restaurantId, tableId, userId, orderId, transferRequests) {
   var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId
   var updates = {}
-  const f = [];
+  const req = [];
+  const app = [];
 
   var suborder = await read(pathOrder + "/suborders/" + userId)
   if(suborder === null)
@@ -357,32 +356,45 @@ exports.suborderHasItemsToPay = async function(restaurantId, tableId, userId, or
   if(isActive !== "active")
     return -2;
 
-  var transferRequests = await read(pathOrder + "/transferRequests/")
   if (transferRequests !== null) {
     for(var i = 0; i < transferRequests.length; i++) {
-      var request = "requests/transferItem/" + restaurantId + "/" + tableId + "/" + transferRequests[i];
-      var requirer = await read(request + "/requirer")
-      var approver = await read(request + "/aprover")
-
-      if(userId == requirer || userId == approver)
-        return -3;
+      var pathRequest = "requests/transferItem/" + restaurantId + "/" + tableId + "/" + transferRequests[i];
+      console.log(pathRequest)
+      req.push(read(pathRequest + "/requirer"))
+      app.push(read(pathRequest + "/aprover"))
     }
   }
 
-  var items = await read(suborder + "/items/")
+  var rr = await Promise.all(req);
+  var aa = await Promise.all(app);
+
+  var k = false;
+
+  rr.forEach(element => {
+    if(userId === element)
+      k = true;
+  })
+
+  aa.forEach(element => {
+    if(userId === element)
+      k = true;
+  })
+
+  if (k) {
+    return -3;
+  }
+
+  var items = await read(pathOrder + "/suborders/" + userId + "/items/")
   if(items === null)
     return -4; 
 
   for(var i = 0; i < items.length; i++) {
-   // f.push(
-   //   read("restaurants/" + restaurantId + "/foods/" + foods[i].id)
-   // )
+    updates[pathOrder + "/suborders/" + userId + "/items/"] = null;
   }
-  //await Promise.all(f);
 
   var v = await update(updates);
   if(v === true) 
-  {
+  { 
     order = await read(pathOrder)
     return order;
   }
