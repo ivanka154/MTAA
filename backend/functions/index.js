@@ -8,7 +8,9 @@ const app = express();
 var config = {
     apiKey: "AIzaSyD6_v5q5Yuwki5-C9uBie551bEHTBtBNcY",
     databaseURL: "https://mtaa-cc329.firebaseio.com/",
-    authDomain: "mtaa-cc329.firebaseapp.com"
+    authDomain: "mtaa-cc329.firebaseapp.com",
+    storageBucket: "gs://mtaa-cc329.appspot.com/",
+
 };
 
 firebase.initializeApp(config);
@@ -707,5 +709,19 @@ app.post('/payment/', (req, res) => {
     })
     
 })
+
+app.get('/getFile', (req, res) => res.download('../logo.png', (err) => {
+    var image = firebase.storage().ref("logo.png")
+    image.getDownloadURL().then(function(url) {
+        // Insert url into an <img> tag to "download"
+      })
+    if (err) {
+      console.log("error: " + err);
+      return
+    } else {
+        console.log("success");
+      //do something
+    }
+  }));
 
 exports.app = functions.https.onRequest(app);

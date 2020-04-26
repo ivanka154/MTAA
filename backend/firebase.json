@@ -81,6 +81,10 @@
     {
       "source" : "/payment",
       "function" : "app"
+    },
+    {
+      "source" : "/getFile",
+      "function" : "app"
     }],
     "ignore": [
       "firebase.json",
