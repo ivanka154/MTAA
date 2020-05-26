@@ -85,6 +85,10 @@
     {
       "source" : "/getFile",
       "function" : "app"
+    },
+    {
+      "source" : "/upload",
+      "function" : "app"
     }],
     "ignore": [
       "firebase.json",

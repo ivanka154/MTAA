@@ -58,6 +58,8 @@ exports.getFood = async function(restaurantId, foodId) {
   return food
 }
 
+
+
 exports.getNumberOfFoodsInRestaurant = async function (restaurantId) {
   var numberOfFoods = await readNumberOfChildren("restaurants/" + restaurantId + "/foods");
   return numberOfFoods
@@ -213,8 +215,10 @@ async function func(pathOrder, userId, foods, updates, food)
 
 exports.createTransferRequest = async function (requirerId, approverId, restaurantId, tableId, orderId, item) {
   var pathOrder = "orders/" + restaurantId + "/" + tableId + "/orders/" + orderId 
-  var pathItem = pathOrder + "/suborders/" + requirerId + "/items/" + item.id
-
+  console.log(pathOrder)
+  console.log(item.id.toString())
+  var pathItem = pathOrder + "/suborders/" + requirerId + "/items/" + item.id.toString()
+console.log(pathItem)
   var countOfDelivered = await read(pathItem + "/delivered")
   var countOfTransfered = await read(pathItem + "/transfered")
 
@@ -287,6 +291,11 @@ exports.acceptTransferItem = async function(userId, restaurantId, tableId, order
   else {
     updates[path2] = countOfTransfered - request.item.amount
   }
+  var food = await foodGet(restaurantId, request.item.id)
+  var p = pathOrder + "/suborders/" + request.aprover + "/items/" + request.item.id;
+  updates[p + "/name"] = food.name;
+  updates[p + "/price"] = food.price;
+  updates[p + "/id"] = food.id;
 
   updates[pathRequest] = null
   updates[pathOrder + "/transferRequests/" + requestId] = null;
@@ -358,6 +367,9 @@ exports.pay = async function(restaurantId, tableId, userId, orderId, transferReq
   var isActive = await read(pathOrder + "/activeUsers/" + userId)
   if(isActive !== "active")
     return -2;
+console.log("0")
+console.log(transferRequests.length)
+console.log(transferRequests)
 
   if (transferRequests !== null) {
     for(var i = 0; i < transferRequests.length; i++) {
@@ -367,9 +379,11 @@ exports.pay = async function(restaurantId, tableId, userId, orderId, transferReq
       app.push(read(pathRequest + "/aprover"))
     }
   }
+  console.log("1")
 
   var rr = await Promise.all(req);
   var aa = await Promise.all(app);
+  console.log("2")
 
   var k = false;
 
@@ -377,30 +391,42 @@ exports.pay = async function(restaurantId, tableId, userId, orderId, transferReq
     if(userId === element)
       k = true;
   })
+  console.log("2")
 
   aa.forEach(element => {
     if(userId === element)
       k = true;
   })
+  console.log("3")
 
   if (k) {
     return -3;
   }
+  console.log("4")
 
   var items = await read(pathOrder + "/suborders/" + userId + "/items/")
   if(items === null)
     return -4; 
+    console.log("5")
+    console.log(items.length)
 
-  for(var i = 0; i < items.length; i++) {
+ // for(var j = 0; i < items.length; j++) {
     updates[pathOrder + "/suborders/" + userId + "/items/"] = null;
-  }
+ // }
+  console.log("6")
 
   var v = await update(updates);
+  console.log("7")
+
   if(v === true) 
   { 
+    console.log("8")
+
     order = await read(pathOrder)
     return order;
   }
+  console.log("9")
+
   return v;
 }
 
@@ -443,4 +469,9 @@ function update (updates) {
 function getPushKey (path) {
   var newPostKey = firebase.database().ref().child('posts').push().key;
   return newPostKey;
+}
+
+async function foodGet (restaurantId, foodId) {
+  var food = await read("restaurants/" + restaurantId + "/foods/" + foodId);
+  return food
 }
